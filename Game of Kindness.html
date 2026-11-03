@@ -1,0 +1,288 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Game of Kindness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: una sola columna de banco de trabajo. Arriba el recorrido de 4 piezas, debajo la carta activa. */
+:root {
+  --bg: #E9EDEB;
+  --surface: #F6F8F7;
+  --ink: #17211F;
+  --muted: #526160;
+  --line: #C4CFCB;
+  --copper: #A34E27;
+  --on-copper: #FFFFFF;
+  --patina: #1D6757;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111918; --surface: #1A2524; --ink: #E7EEEC; --muted: #9DADA9; --line: #2E3C3A;
+    --copper: #E38C5C; --on-copper: #1B0F08; --patina: #62C4AE; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111918; --surface: #1A2524; --ink: #E7EEEC; --muted: #9DADA9; --line: #2E3C3A;
+  --copper: #E38C5C; --on-copper: #1B0F08; --patina: #62C4AE; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55; padding-inline: 16px; padding-block: 24px 48px; }
+main { max-width: 720px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+header { display: flex; flex-direction: column; gap: 6px; }
+h1 { font-size: clamp(2.4rem, 9vw, 3.6rem); font-weight: 800; letter-spacing: -.02em; }
+.lede { color: var(--muted); max-width: 52ch; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.steps li { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.steps strong { font-family: var(--font-display); font-size: 1.05rem; }
+.steps span { color: var(--muted); font-size: .95rem; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+input[type=text] { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; min-width: 0; width: 100%; }
+button { font: inherit; font-weight: 600; cursor: pointer; border-radius: 6px; padding: 12px 18px; border: 1px solid var(--line); background: transparent; color: var(--ink); min-height: 46px; }
+button.primary { background: var(--copper); color: var(--on-copper); border-color: var(--copper); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 3px solid var(--patina); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.path { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.node { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); min-width: 0; text-align: center; }
+.node svg { width: 38px; height: 38px; }
+.node .label { font-size: 10px; letter-spacing: .06em; overflow-wrap: anywhere; }
+.node.now { border-color: var(--copper); color: var(--ink); }
+.node.done { color: var(--patina); border-color: var(--patina); }
+.node.done svg .fillable { fill: currentColor; fill-opacity: .22; }
+
+.station { display: flex; flex-direction: column; gap: 6px; }
+.station h2 { font-size: clamp(1.8rem, 6vw, 2.4rem); font-weight: 800; }
+.count { display: flex; gap: 6px; align-items: center; }
+.pip { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--copper); }
+.pip.on { background: var(--copper); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; animation: lift .35s ease-out; }
+.card .turn { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--copper); }
+.card .reto { font-family: var(--font-display); font-size: clamp(1.35rem, 4.6vw, 1.75rem); font-weight: 700; line-height: 1.25; text-wrap: pretty; }
+.card .hint { color: var(--muted); }
+.timer { font-family: var(--font-mono); font-size: 2rem; font-variant-numeric: tabular-nums; }
+@keyframes lift { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+
+.reflect { border-color: var(--patina); }
+.reflect .turn { color: var(--patina); }
+.forged { align-items: flex-start; }
+.forged svg { width: 96px; height: 96px; color: var(--patina); }
+.forged svg .fillable { fill: currentColor; fill-opacity: .22; }
+.final { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.final .node { padding: 18px 8px; }
+.final .node svg { width: 56px; height: 56px; }
+svg .s { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+
+<main id="app">
+  <header>
+    <span class="label">The Backpack Project · Persona y Afectividad</span>
+    <h1>Game of Kindness</h1>
+    <p class="lede">Un juego para dos que entrena la capacidad de amar. Recorran las cuatro estaciones del taller del orfebre y forjen una pieza en cada una.</p>
+  </header>
+
+  <section id="intro" class="panel" aria-labelledby="introTitle">
+    <h2 id="introTitle" style="font-size:1.4rem">Cómo se juega</h2>
+    <ol class="steps">
+      <li><strong>1. Formen la pareja de juego</strong><span>Pueden ser pareja, familia o amigos. Necesitan papel y lápiz para algunas cartas.</span></li>
+      <li><strong>2. Saquen una carta</strong><span>Cada estación tiene sus retos. Uno cumple el reto y el otro acompaña.</span></li>
+      <li><strong>3. Reflexionen juntos</strong><span>Después de cada reto responden una pregunta sobre El Taller del Orfebre.</span></li>
+      <li><strong>4. Forjen la pieza</strong><span>Con dos retos cumplidos se forja el objeto de la estación. Con las cuatro piezas, el taller queda completo.</span></li>
+    </ol>
+    <div class="fields">
+      <div class="field"><label class="label" for="nameA">Jugador 1</label><input id="nameA" type="text" maxlength="24" placeholder="Nombre" autocomplete="off"></div>
+      <div class="field"><label class="label" for="nameB">Jugador 2</label><input id="nameB" type="text" maxlength="24" placeholder="Nombre" autocomplete="off"></div>
+    </div>
+    <div class="row"><button class="primary" id="start" type="button">Entrar al taller</button></div>
+  </section>
+
+  <section id="play" hidden aria-live="polite"></section>
+</main>
+
+<script>
+(function () {
+  var ICONS = {
+    ring: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle class="s fillable" cx="32" cy="40" r="16"/><polygon class="s fillable" points="32,6 41,15 32,24 23,15"/></svg>',
+    key: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle class="s fillable" cx="19" cy="32" r="11"/><path class="s" d="M30 32h28M48 32v10M55 32v7"/></svg>',
+    thread: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect class="s fillable" x="5" y="22" width="36" height="20" rx="10"/><rect class="s fillable" x="23" y="22" width="36" height="20" rx="10"/></svg>',
+    hammer: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect class="s fillable" x="12" y="8" width="40" height="15" rx="3"/><path class="s" d="M32 23v34"/></svg>'
+  };
+
+  var STATIONS = [
+    {
+      nombre: "Amor", tema: "Entrega", icon: "ring", objeto: "el anillo",
+      libro: "En El Taller del Orfebre, amar no es solo enamorarse: es entregarse, comprometerse y responsabilizarse del otro.",
+      reflex: "¿Qué parte de lo que acaban de hacer fue sentimiento y qué parte fue decisión?",
+      forja: "El anillo representa la unión, la promesa y la entrega de dos personas.",
+      cartas: [
+        "Dile a {otro} algo concreto que hace por ti y que casi nunca agradeces.",
+        "Pregúntale a {otro} qué necesita esta semana y comprométete con una acción pequeña para dársela.",
+        "Cuéntale a {otro} algo que hiciste por alguien sin que se enterara, y qué te movió a hacerlo.",
+        "Escribe en un papel una promesa pequeña que sí vas a cumplir esta semana por {otro} y entrégasela.",
+        "Explícale a {otro} con un ejemplo de tu vida la diferencia entre sentirte enamorado y decidir amar.",
+        "Acuerda con {otro} una hora esta semana, sin celular, dedicada solo a esa persona."
+      ]
+    },
+    {
+      nombre: "Libertad", tema: "Elección", icon: "key", objeto: "la llave",
+      libro: "Para Wojtyła no hay entrega verdadera sin libertad. Teresa puede aceptar o rechazar a Andrés, y Mónica y Cristóbal eligen construir su propia historia.",
+      reflex: "¿En qué momento de este reto sentiste que elegías de verdad y no que cumplías por compromiso?",
+      forja: "La llave representa la capacidad de elegir y decidir el propio camino.",
+      cartas: [
+        "Decide en voz alta algo que sueles dejar que otros decidan, como el plan de hoy o qué comer, y asume la decisión.",
+        "Cuéntale a {otro} una decisión que tomaste libremente y de la que te hiciste responsable, aunque costó.",
+        "Pídele a {otro} algo que quieres, dándole plena libertad de decir que no. Escucha el no sin reclamar.",
+        "Nombra algo que haces solo por presión de otros. ¿Lo elegirías hoy libremente?",
+        "Propongan un compromiso que ambos puedan aceptar o rechazar sin culpa, y decidan juntos.",
+        "Recuerda una vez en que alguien respetó tu libertad al quererte. ¿Qué hizo exactamente?"
+      ]
+    },
+    {
+      nombre: "Relaciones sólidas", tema: "Comunicación", icon: "thread", objeto: "los dos hilos entrelazados",
+      libro: "El matrimonio de Ana y Esteban se deteriora cuando pierden comunicación, cercanía y entrega. Teresa y Andrés, en cambio, dejan una huella profunda y duradera.",
+      reflex: "¿Qué hace falta para que una relación se mantenga firme cuando ya no hay emoción de novedad?",
+      forja: "Los hilos representan dos vidas que construyen juntas lo que no podrían construir igual por separado.",
+      cartas: [
+        { t: "Escucha un minuto sin interrumpir mientras {otro} cuenta algo que le pesó esta semana. Luego repite con tus palabras lo que sintió.", s: 60 },
+        "Cada uno dice una cosa que necesita para sentirse cerca en esta relación: más tiempo, palabras o ayuda.",
+        "Piensa en una relación tuya que quieras cuidar más. ¿Qué la mantiene viva y qué la está descuidando?",
+        "Recuerden juntos un malentendido que tuvieron y cómo lo resolvieron, o por qué no lo resolvieron.",
+        "Dile a {otro} algo que valoras de él o ella y que nunca le has dicho.",
+        "Pregúntale a {otro}: ¿qué necesitas que yo haga distinto para sentirte escuchado? Escucha sin defenderte."
+      ]
+    },
+    {
+      nombre: "Proceso amoroso", tema: "Perseverancia", icon: "hammer", objeto: "el martillo de orfebre",
+      libro: "La obra muestra que el amor no aparece terminado: pasa por enamoramiento, elección, compromiso, dificultades y maduración, como el metal que trabaja el orfebre.",
+      reflex: "¿Qué dificultad de una relación tuya podría ser justamente el golpe que le da forma?",
+      forja: "El martillo representa el trabajo y las dificultades por las que el amor gana profundidad.",
+      cartas: [
+        "Elige una intención pequeña que repetirás cada día esta semana y pídele a {otro} que te pregunte cómo va.",
+        "Cuéntale a {otro} algo que te costó varios intentos y qué te sostuvo.",
+        "Nombra una dificultad actual en una relación tuya y un paso mínimo que darás para trabajarla.",
+        { t: "Cada uno escribe con la mano no dominante una frase sobre amar. Repitan hasta que se lea bien.", s: 90 },
+        "Dile a {otro} en qué has madurado en tu manera de querer en los últimos años.",
+        "Recuerda un error en una relación que te enseñó algo. ¿Qué forjó en ti?"
+      ]
+    }
+  ];
+
+  var el = function (id) { return document.getElementById(id); };
+  var play = el("play"), intro = el("intro");
+  var S, timerId = null;
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function names() { return [S.a, S.b]; }
+  function cur() { return names()[S.turn % 2]; }
+  function other() { return names()[(S.turn + 1) % 2]; }
+
+  function newGame() {
+    S = { a: (el("nameA").value || "").trim() || "Jugador 1", b: (el("nameB").value || "").trim() || "Jugador 2",
+          si: 0, done: 0, turn: 0, step: "draw", card: null, swaps: 1, used: [], forged: [] };
+    intro.hidden = true; play.hidden = false; render();
+  }
+
+  function pathHTML() {
+    return '<div class="path">' + STATIONS.map(function (st, i) {
+      var cls = S.forged.indexOf(i) > -1 ? "done" : (i === S.si && S.step !== "end" ? "now" : "");
+      return '<div class="node ' + cls + '">' + ICONS[st.icon] + '<span class="label">' + esc(st.nombre) + '</span></div>';
+    }).join("") + '</div>';
+  }
+
+  function pickCard() {
+    var st = STATIONS[S.si], free = [];
+    st.cartas.forEach(function (c, i) { if (S.used.indexOf(S.si + ":" + i) < 0) free.push(i); });
+    var i = free[Math.floor(Math.random() * free.length)];
+    S.used.push(S.si + ":" + i);
+    var c = st.cartas[i];
+    S.card = typeof c === "string" ? { t: c, s: 0 } : c;
+  }
+
+  function fill(t) { return esc(t).replace(/\{otro\}/g, "<strong>" + esc(other()) + "</strong>"); }
+
+  function render() {
+    clearInterval(timerId);
+    var st = STATIONS[S.si], h = "";
+    if (S.step === "end") { return renderEnd(); }
+    h += pathHTML();
+    h += '<div class="station"><span class="label">Estación ' + (S.si + 1) + ' de 4 · ' + esc(st.tema) + '</span><h2>' + esc(st.nombre) + '</h2>' +
+         '<div class="count" aria-label="Retos cumplidos"><span class="pip ' + (S.done > 0 ? "on" : "") + '"></span><span class="pip ' + (S.done > 1 ? "on" : "") + '"></span><span class="label">&nbsp;' + S.done + ' de 2 retos</span></div></div>';
+
+    if (S.step === "draw") {
+      h += '<div class="card"><p class="hint">' + esc(st.libro) + '</p><p class="turn">Turno de ' + esc(cur()) + '</p>' +
+           '<div class="row"><button class="primary" id="draw" type="button">Sacar carta</button></div></div>';
+    } else if (S.step === "card") {
+      h += '<div class="card"><span class="turn">Reto para ' + esc(cur()) + ' · acompaña ' + esc(other()) + '</span>' +
+           '<p class="reto">' + fill(S.card.t) + '</p>';
+      if (S.card.s) { h += '<div><div class="timer" id="clock">' + fmt(S.card.s) + '</div><button type="button" id="go" style="margin-top:8px">Iniciar ' + S.card.s + ' s</button></div>'; }
+      h += '<div class="row"><button class="primary" id="ok" type="button">Lo cumplimos</button>' +
+           '<button type="button" id="swap"' + (S.swaps < 1 ? " disabled" : "") + '>Cambiar carta</button></div>' +
+           '<p class="hint">Cambiar carta se puede una vez por estación.</p></div>';
+    } else if (S.step === "reflect") {
+      h += '<div class="card reflect"><span class="turn">Reflexionen los dos</span><p class="reto">' + esc(st.reflex) + '</p>' +
+           '<p class="hint">' + esc(st.libro) + '</p><div class="row"><button class="primary" id="next" type="button">' +
+           (S.done >= 2 ? "Forjar " + esc(st.objeto) : "Siguiente carta") + '</button></div></div>';
+    } else if (S.step === "forged") {
+      h += '<div class="card reflect forged">' + ICONS[st.icon].replace("<svg ", '<svg role="img" aria-label="' + esc(st.objeto) + '" ') +
+           '<span class="turn">Pieza forjada</span><p class="reto">Forjaron ' + esc(st.objeto) + '.</p><p class="hint">' + esc(st.forja) + '</p>' +
+           '<div class="row"><button class="primary" id="adv" type="button">' + (S.si === 3 ? "Terminar el taller" : "Ir a la estación " + (S.si + 2)) + '</button></div></div>';
+    }
+    play.innerHTML = h;
+    bind();
+  }
+
+  function fmt(n) { var m = Math.floor(n / 60), s = n % 60; return m + ":" + (s < 10 ? "0" : "") + s; }
+
+  function bind() {
+    var b = function (id, fn) { var x = el(id); if (x) x.addEventListener("click", fn); };
+    b("draw", function () { pickCard(); S.step = "card"; render(); focusMain(); });
+    b("swap", function () { S.swaps -= 1; pickCard(); render(); focusMain(); });
+    b("ok", function () { S.done += 1; S.step = "reflect"; render(); focusMain(); });
+    b("next", function () {
+      if (S.done >= 2) { S.forged.push(S.si); S.step = "forged"; }
+      else { S.turn += 1; S.step = "draw"; }
+      render(); focusMain();
+    });
+    b("adv", function () {
+      if (S.si === 3) { S.step = "end"; }
+      else { S.si += 1; S.done = 0; S.swaps = 1; S.turn += 1; S.step = "draw"; }
+      render(); focusMain();
+    });
+    b("go", function () {
+      var left = S.card.s, clock = el("clock"), btn = el("go");
+      btn.disabled = true;
+      timerId = setInterval(function () {
+        left -= 1; clock.textContent = fmt(Math.max(left, 0));
+        if (left <= 0) { clearInterval(timerId); clock.textContent = "Tiempo"; }
+      }, 1000);
+    });
+  }
+
+  function focusMain() { var t = play.querySelector(".card"); if (t) { t.setAttribute("tabindex", "-1"); t.focus({ preventScroll: true }); t.scrollIntoView({ block: "nearest" }); } }
+
+  function renderEnd() {
+    var h = '<div class="station"><span class="label">Taller completo</span><h2>' + esc(S.a) + ' y ' + esc(S.b) + ', forjaron las cuatro piezas</h2></div>' +
+      '<div class="final">' + STATIONS.map(function (st) { return '<div class="node done">' + ICONS[st.icon] + '<span class="label">' + esc(st.objeto) + '</span></div>'; }).join("") + '</div>' +
+      '<div class="card reflect"><span class="turn">Para llevarse</span><p class="reto">El amor no se encuentra terminado: se trabaja, como el metal del orfebre.</p>' +
+      '<p class="hint">Elijan una de las cuatro cartas que más les movió y cúmplanla de verdad esta semana.</p>' +
+      '<div class="row"><button class="primary" id="again" type="button">Jugar de nuevo</button></div></div>';
+    play.innerHTML = h;
+    el("again").addEventListener("click", function () { play.hidden = true; intro.hidden = false; play.innerHTML = ""; window.scrollTo(0, 0); });
+  }
+
+  el("start").addEventListener("click", newGame);
+})();
+</script>
+
+</body></html>
